@@ -1,8 +1,22 @@
 # gopro-renamer
-Rename GoPro media files so sequential files sort alphanumerically rather than using GoPro's terrible naming convention.
+Renames and organizes GoPro media files by grouping sequential chapters into folders. When GoPro splits long recordings into multiple files, it uses confusing names like GH010123.MP4, GH020123.MP4, etc. This script organizes these related files together alphanumerically for easier management.
 
+## Optional
+For fancy progress bars, you can install tqdm.
 
-usage: gopro_renamer.py [-h] [--path PATH] [--recursive] [--dry-run] [--undo] [--copy] [--backup]
+tqdm
+```
+pip install tqdm
+```
+## Usage
+```
+Example:
+
+python gopro-renamer.py --path /path_to_gopro_files/
+
+---
+
+usage: gopro-renamer.py [-h] [--path PATH] [--recursive] [--dry-run] [--undo] [--copy] [--backup]
 
 Rename and organize GoPro video files and their associated files.
 
@@ -14,3 +28,4 @@ options:
   --undo       Undo the last organization
   --copy       Copy files instead of renaming them
   --backup     Create backups when copying files (only works with --copy)
+```
