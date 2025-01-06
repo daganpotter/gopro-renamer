@@ -7,7 +7,37 @@ from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
 import json
-from tqdm import tqdm
+
+# Try to import tqdm, but provide a fallback if not available
+try:
+    from tqdm import tqdm
+    HAVE_TQDM = True
+except ImportError:
+    HAVE_TQDM = False
+    
+    # Simple progress indicator fallback
+    class SimpleProg:
+        def __init__(self, total, desc):
+            self.total = total
+            self.desc = desc
+            self.n = 0
+            self.last_print = 0
+            print(f"{desc}: 0/{total}", end='', flush=True)
+            
+        def update(self, n=1):
+            self.n += n
+            # Only update display every 1% to avoid console spam
+            if self.n - self.last_print >= max(1, self.total // 100):
+                print(f"\r{self.desc}: {self.n}/{self.total}", end='', flush=True)
+                self.last_print = self.n
+                
+        def __enter__(self):
+            return self
+            
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            print(f"\r{self.desc}: {self.n}/{self.total} - Done!", flush=True)
+            
+    tqdm = SimpleProg
 
 class GoProFileRenamer:
     GOPRO_PATTERNS = [
@@ -115,8 +145,11 @@ class GoProFileRenamer:
                 if not self.dry_run:
                     self.backup_path.mkdir(exist_ok=True)
 
-            # Process files with progress bar
-            with tqdm(total=total_operations, desc="Processing files") as pbar:
+            self.logger.info(f"Found {total_operations} files to process")
+            
+            # Process files with progress indicator
+            progress_cls = tqdm if HAVE_TQDM else SimpleProg
+            with progress_cls(total=total_operations, desc="Processing files") as pbar:
                 for directory, files_dict in files_by_dir.items():
                     for file_number, files in files_dict.items():
                         mp4_files = [f for f in files if f.suffix.upper() == '.MP4']
@@ -188,7 +221,8 @@ class GoProFileRenamer:
                 moved_files = json.load(f)
 
             total_operations = sum(len(movements) for movements in moved_files.values())
-            with tqdm(total=total_operations, desc="Undoing changes") as pbar:
+            progress_cls = tqdm if HAVE_TQDM else SimpleProg
+            with progress_cls(total=total_operations, desc="Undoing changes") as pbar:
                 for directory, movements in moved_files.items():
                     for movement in movements:
                         original_path = Path(movement['original'])
